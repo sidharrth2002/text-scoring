@@ -444,13 +444,13 @@ def load_data(data_df,
     # create mask
     answer_mask = torch.zeros(answer_tokens.shape, dtype=torch.long)
     print(torch.Tensor(answer_tokens))
-    # answer_mask = answer_mask.masked_fill_(torch.Tensor(answer_tokens) != 0, 1)
+    answer_mask.masked_fill_(torch.Tensor(answer_tokens) != 0, 1)
 
     keyword_tokens = glove_tokenizer.texts_to_sequences(keywords)
     keyword_tokens = pad_sequences(keyword_tokens, maxlen=max_keyword_length)
     keyword_tokens = torch.reshape(torch.from_numpy(keyword_tokens), (len(keywords), max_keyword_length))
     keyword_mask = torch.zeros(keyword_tokens.shape, dtype=torch.long)
-    keyword_mask = keyword_mask.masked_fill_(keyword_tokens != 0, 1)
+    keyword_mask.masked_fill_(keyword_tokens != 0, 1)
 
     return TorchTabularTextDataset(hf_model_text_input, categorical_feats,
                                    numerical_feats, answer_tokens, answer_mask, keyword_tokens, keyword_mask, labels, data_df, label_list)

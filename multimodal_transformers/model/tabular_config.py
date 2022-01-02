@@ -29,7 +29,7 @@ class TabularConfig:
                  numerical_feat_dim=0,
                  cat_feat_dim=0,
                  keyword_attention_dim=0,
-                 embedding_weights=None,
+                 vocab_size=0,
                  **kwargs
                  ):
         self.mlp_division = mlp_division
@@ -43,4 +43,4 @@ class TabularConfig:
         self.cat_feat_dim = cat_feat_dim
         self.num_labels = num_labels
         self.keyword_attention_dim = keyword_attention_dim
-        self.embedding_weights = embedding_weights
+        self.vocab_size = vocab_size

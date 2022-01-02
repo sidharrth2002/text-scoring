@@ -664,7 +664,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                           bn=True)
 
         # load embeddings
-        self.embedding_layer = nn.Embedding.from_pretrained(torch.from_numpy(tabular_config.embedding_weights).float(), freeze=True)
+        self.embedding_layer = nn.Embedding(self.config.vocab_size, embedding_dim=300)
+        # self.embedding_layer = nn.Embedding.from_pretrained(torch.from_numpy(tabular_config.embedding_weights).float(), freeze=True)
 
     @add_start_docstrings(LONGFORMER_INPUTS_DOCSTRING.format("(batch_size, sequence_length)"))
     def forward(

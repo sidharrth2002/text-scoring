@@ -60,7 +60,7 @@ class TorchTabularTextDataset(TorchDataset):
         item['numerical_feats'] = torch.tensor(self.numerical_feats[idx]).float()\
             if self.numerical_feats is not None else torch.zeros(0)
         item['answer_tokens'] = torch.tensor(self.answer_tokens[0][idx])
-        item['answer_mask'] = torch.tensor(self.answer_mask[0][idx])
+        item['answer_mask'] = torch.tensor(self.answer_mask[idx])
         item['keyword_tokens'] = torch.tensor(self.keyword_tokens)
         item['keyword_mask'] = torch.tensor(self.keyword_mask)
         return item
