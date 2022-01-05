@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 from torch.nn.parameter import Parameter
+import tensorflow.keras.backend as K
 
 # pytorch layer
 class KeyAttention(nn.Module):
@@ -32,6 +33,7 @@ class KeyAttention(nn.Module):
         beta: Bool.
     """
     def __init__(self,
+                 name='key_attention',
                  op='dp',
                  seed=-1,
                  emb_dim=300,
@@ -50,40 +52,48 @@ class KeyAttention(nn.Module):
         self.M = None
         self.v = None
         self.bias = None
-        self.init_weights()
+        self.token_num_key = 10
+        self.token_num_ans = 1024
+        # self.init_weights()
 
-    def init_weights(self, input_shape):
-        self.token_num_ans = input_shape[0][1]
-        self.token_num_key = input_shape[1][1]
-        if self.seed != -1:
-            torch.manual_seed(self.seed)
-        if self.op == 'dp':
-            self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-            self.bias = Parameter(torch.Tensor(self.emb_dim))
-            torch.nn.init.xavier_uniform_(self.W)
-            torch.nn.init.constant_(self.bias, 0)
-        elif self.op == 'sdp':
-            self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-            self.bias = Parameter(torch.Tensor(self.emb_dim))
-            torch.nn.init.xavier_uniform_(self.W)
-            torch.nn.init.constant_(self.bias, 0)
-        elif self.op == 'gen':
-            self.M = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-            self.bias = Parameter(torch.Tensor(self.emb_dim))
-            torch.nn.init.xavier_uniform_(self.M)
-            torch.nn.init.constant_(self.bias, 0)
-        super(KeyAttention, self).init_weights(input_shape)
-    def compute_mask(self, inputs, mask):
-        return None
+    # def init_weights(self, input_shape):
+    #     self.token_num_ans = input_shape[0][1]
+    #     self.token_num_key = input_shape[1][1]
+    #     if self.seed != -1:
+    #         torch.manual_seed(self.seed)
+    #     if self.op == 'dp':
+    #         self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
+    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
+    #         torch.nn.init.xavier_uniform_(self.W)
+    #         torch.nn.init.constant_(self.bias, 0)
+    #     elif self.op == 'sdp':
+    #         self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
+    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
+    #         torch.nn.init.xavier_uniform_(self.W)
+    #         torch.nn.init.constant_(self.bias, 0)
+    #     elif self.op == 'gen':
+    #         self.M = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
+    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
+    #         torch.nn.init.xavier_uniform_(self.M)
+    #         torch.nn.init.constant_(self.bias, 0)
+    #     super(KeyAttention, self).init_weights(input_shape)
+    # def compute_mask(self, inputs, mask):
+    #     return None
 
-    def bdot(a, b):
-        B = a.shape[0]
-        S = a.shape[1]
-        return torch.bmm(a.view(B, 1, S), b.view(B, S, 1)).reshape(-1)
+    def bdot(self, a, b):
+        return torch.bmm(a, b)
+        # B = a.shape[0]
+        # S = a.shape[1]
+        # print('a.shape:', a.shape)
+        # print('b.shape:', b.shape)
+        # # I removed view from here
+        # # TODO: check if this is correct
+        # return torch.bmm(a, b).reshape(-1)
 
     def softmax(self, x, mask):
         y = torch.exp(x - torch.max(x, axis=1, keepdim=True))
-        sum_y = self.bdot(y, torch.permute(mask, (0, 2, 1)))
+        # sum_y = K.batch_dot(y, torch.permute(mask, (0, 2, 1)))
+        sum_y = torch.bmm(y, torch.permute(mask, (0, 2, 1)))
         return y/sum_y
 
     def forward(self, inputs):
@@ -91,23 +101,53 @@ class KeyAttention(nn.Module):
         mask_ans_inf = torch.abs(mask_ans - 1) * -10000
         mask_key_inf = torch.abs(mask_key - 1) * -10000
 
+        print('mask_ans_inf.shape', mask_ans_inf.shape)
+        print('mask_key_inf.shape', mask_key_inf.shape)
+        print('mask_ans_inf', mask_ans_inf)
+        print('mask_key_inf', mask_key_inf)
+
         mask_ans_inf_1 = torch.unsqueeze(mask_ans_inf, 1)
         mask_key_inf_1 = torch.unsqueeze(mask_key_inf, 1)
+
+        print('After unsqueeze')
+
+        print('mask_ans_inf_1.shape', mask_ans_inf.shape)
+        print('mask_key_inf_1.shape', mask_key_inf.shape)
+        print('mask_ans_inf_1', mask_ans_inf)
+        print('mask_key_inf_1', mask_key_inf)
 
         mask_ans_2 = torch.unsqueeze(mask_ans, 2)
         mask_key_2 = torch.unsqueeze(mask_key, 2)
 
+        print('mask_ans_2.shape', mask_ans_2.shape)
+        print('mask_key_2.shape', mask_key_2.shape)
+        print('mask_ans_2', mask_ans_2)
+        print('mask_key_2', mask_key_2)
+
         ans = ans * mask_ans_2
         key = key * mask_key_2
 
-        Z_dp = self.bdot(key, torch.permute(key, (0, 2, 1)))
+        print('ans.shape', ans.shape)
+        print('key.shape', key.shape)
+        print('ans', ans)
+        print('key', key)
 
-        norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), 1e-8))
-        norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), 1e-8))
+        Z_dp = torch.bmm(key, torch.permute(ans, (0, 2, 1)))
+
+        print('Z_dp.shape', Z_dp.shape)
+        print('Z_dp', Z_dp)
+        # Z_dp = K.batch_dot(key, K.permute_dimensions(ans, (0, 2, 1)))
+
+        norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-8)))
+        norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), torch.tensor(1e-8)))
 
         norm_repeat_ans = torch.repeat_interleave(norm_ans, self.token_num_key)
         norm_repeat_key = torch.repeat_interleave(norm_key, self.token_num_ans)
-        norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
+        print('norm_ans.shape:', norm_ans.shape)
+        print('norm_key.shape:', norm_key.shape)
+        print('norm_repeat_key:', norm_repeat_key.shape)
+        print('norm_repeat_ans:', norm_repeat_ans.shape)
+        # norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
 
         Z_cos = Z_dp / (norm_repeat_key * norm_repeat_ans)
 
@@ -117,17 +157,20 @@ class KeyAttention(nn.Module):
             Z = Z_dp / torch.sqrt(self.bias)
         elif self.op == "gen":
             Z = torch.dot(key, self._M)
-            Z = self.bdot(Z, torch.permute(key, (0, 2, 1)))
+            # Z = K.batch_dot(Z, torch.permute(ans, (0, 2, 1)))
+            Z = torch.bmm(Z, torch.permute(ans, (0, 2, 1)))
         elif self.op == "cos":
             Z = Z_cos
 
+        print('Z shape', Z.shape)
         Z_key = torch.permute(Z, (0, 2, 1))
+        print('Z_key shape', Z_key.shape)
         if self.mask_pad:
             Z_softmax_key = self.softmax(Z_key + mask_key_inf_1, axis=2)
         else:
             Z_softmax_key = self.softmax(Z_key, axis=2)
 
-        V = self.bdot(Z_softmax_key, key)
+        V = torch.bmm(Z_softmax_key, key)
         V = V * mask_ans_2
 
         Z_ans = Z
@@ -136,7 +179,7 @@ class KeyAttention(nn.Module):
         else:
             Z_softmax_ans = self.softmax(Z_ans, axis=1)
 
-        U = self.bdot(Z_softmax_ans, ans)
+        U = torch.bmm(Z_softmax_ans, ans)
         U = U * mask_key_2
 
         beta_key = torch.sigmoid(torch.max(Z_cos + mask_ans_inf_1, axis=2) * 5)
@@ -182,8 +225,9 @@ class KeyAttention(nn.Module):
         return rtn_list
 
 class LambdaLayer(nn.Module):
-    def __init__(self, lambd):
+    def __init__(self, lambd, name):
         super(LambdaLayer, self).__init__()
         self.lambd = lambd
+        self.name = name
     def forward(self, x):
         return self.lambd(x)

@@ -729,7 +729,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         att_rtn_keys = ('z', 'z_ans', 'z_key', 'beta_ans', 'beta_key')
         att_layer = KeyAttention(
             name='attention',
-            op='dot',
+            op='dp',
             seed=0,
             emb_dim=300,
             word_att_pool='mean',
