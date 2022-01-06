@@ -54,6 +54,7 @@ class KeyAttention(nn.Module):
         self.bias = None
         self.token_num_key = 10
         self.token_num_ans = 1024
+        self.mask_pad = True
         # self.init_weights()
 
     # def init_weights(self, input_shape):
@@ -141,13 +142,13 @@ class KeyAttention(nn.Module):
         norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-8)))
         norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), torch.tensor(1e-8)))
 
-        norm_repeat_ans = torch.repeat_interleave(norm_ans, self.token_num_key)
-        norm_repeat_key = torch.repeat_interleave(norm_key, self.token_num_ans)
+        norm_repeat_ans = torch.repeat_interleave(norm_ans, self.token_num_key, dim=0).reshape(2, self.token_num_key, self.token_num_ans)
+        norm_repeat_key = torch.repeat_interleave(norm_key, self.token_num_ans, dim=0).reshape(2, self.token_num_ans, self.token_num_key)
         print('norm_ans.shape:', norm_ans.shape)
         print('norm_key.shape:', norm_key.shape)
         print('norm_repeat_key:', norm_repeat_key.shape)
         print('norm_repeat_ans:', norm_repeat_ans.shape)
-        # norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
+        norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
 
         Z_cos = Z_dp / (norm_repeat_key * norm_repeat_ans)
 
@@ -166,27 +167,32 @@ class KeyAttention(nn.Module):
         Z_key = torch.permute(Z, (0, 2, 1))
         print('Z_key shape', Z_key.shape)
         if self.mask_pad:
-            Z_softmax_key = self.softmax(Z_key + mask_key_inf_1, axis=2)
+            Z_softmax_key = torch.softmax(Z_key + mask_key_inf_1, axis=2)
         else:
-            Z_softmax_key = self.softmax(Z_key, axis=2)
+            Z_softmax_key = torch.softmax(Z_key, axis=2)
 
         V = torch.bmm(Z_softmax_key, key)
         V = V * mask_ans_2
 
         Z_ans = Z
         if self.mask_pad:
-            Z_softmax_ans = self.softmax(Z_ans + mask_ans_inf_1, axis=1)
+            Z_softmax_ans = torch.softmax(Z_ans + mask_ans_inf_1, axis=1)
         else:
-            Z_softmax_ans = self.softmax(Z_ans, axis=1)
+            Z_softmax_ans = torch.softmax(Z_ans, axis=1)
 
         U = torch.bmm(Z_softmax_ans, ans)
         U = U * mask_key_2
 
-        beta_key = torch.sigmoid(torch.max(Z_cos + mask_ans_inf_1, axis=2) * 5)
+        print('shape of Z_cos + mask_ans_inf_1', (Z_cos + mask_ans_inf_1).shape)
+        print('torch.max of Z_cos + mask_ans_inf_1:', torch.max(Z_cos + mask_ans_inf_1, axis=2))
+        # print('shape', torch.max(Z_cos + mask_ans_inf_1, axis=2).shape)
+
+        # torch.max returns a tuple unlike keras.backend.max
+        beta_key = torch.sigmoid(torch.max(Z_cos + mask_ans_inf_1, axis=2)[0] * 5)
         beta_key = torch.unsqueeze(beta_key, 2)
 
         Z_cos = torch.permute(Z_cos, (0, 2, 1))
-        beta_ans = torch.sigmoid(torch.max(Z_cos + mask_key_inf_1, axis=2) * 5)
+        beta_ans = torch.sigmoid(torch.max(Z_cos + mask_key_inf_1, axis=2)[0] * 5)
 
         beta_ans = torch.unsqueeze(beta_ans, 2)
 

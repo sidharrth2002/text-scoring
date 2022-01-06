@@ -649,11 +649,13 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         self.num_labels = tabular_config.num_labels
         combined_feat_dim = self.tabular_combiner.final_out_dim
         self.dropout = nn.Dropout(hf_model_config.hidden_dropout_prob)
+        self.keyword_MLP = MLP(1200, 20, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+
         if tabular_config.use_simple_classifier:
-            self.tabular_classifier = nn.Linear(combined_feat_dim,
+            self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
                                                 tabular_config.num_labels)
         else:
-            dims = calc_mlp_dims(combined_feat_dim,
+            dims = calc_mlp_dims(combined_feat_dim + self.keyword_MLP.out_dim,
                                  division=tabular_config.mlp_division,
                                  output_dim=tabular_config.num_labels)
             self.tabular_classifier = MLP(combined_feat_dim,
@@ -663,10 +665,20 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                           hidden_channels=dims,
                                           bn=True)
 
+
+        self.att_layer = KeyAttention(
+            name='attention',
+            op='dp',
+            seed=0,
+            emb_dim=300,
+            word_att_pool='mean',
+            merge_ans_key='concat',
+            beta=False
+        )
+
         # load embeddings
         self.embedding_layer = nn.Embedding(self.config.vocab_size, embedding_dim=300)
         # self.embedding_layer = nn.Embedding.from_pretrained(torch.from_numpy(tabular_config.embedding_weights).float(), freeze=True)
-
     @add_start_docstrings(LONGFORMER_INPUTS_DOCSTRING.format("(batch_size, sequence_length)"))
     def forward(
         self,
@@ -727,15 +739,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         keys_mask_emb = self.embedding_layer(keyword_mask)
 
         att_rtn_keys = ('z', 'z_ans', 'z_key', 'beta_ans', 'beta_key')
-        att_layer = KeyAttention(
-            name='attention',
-            op='dp',
-            seed=0,
-            emb_dim=300,
-            word_att_pool='mean',
-            merge_ans_key='concat',
-            beta=False
-        )
 
         fea_att_list = list()
         attentions = {k: list() for k in att_rtn_keys}
@@ -744,7 +747,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             t_k = LambdaLayer(lambda x: x[:, i], name='key_%d' % i)(keys_emb)
             t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_tokens)
 
-            f, *att_rtn = att_layer([ans_emb, answer_mask, t_k, t_k_m])
+            f, *att_rtn = self.att_layer([ans_emb, answer_mask, t_k, t_k_m])
 
             fea_att_list.append(f)
 
@@ -752,7 +755,15 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             attentions[att_rtn_keys[i_a_r]].append(a_r)
 
         # do something with this- represents keyword attention
-        fea_rubric = torch.cat(fea_att_list)
+        print('fea_att_list.shape', len(fea_att_list))
+        print('fea_att_list', fea_att_list)
+        print('Shapes of items in fea_att_list')
+        for item in fea_att_list:
+            print(item.shape)
+        fea_rubric = torch.cat(fea_att_list, dim=1)
+
+        print('fea_rubric shape', fea_rubric.shape)
+        print('fea_rubric', fea_rubric)
 
         layer_exp_dim = LambdaLayer(lambda x: torch.unsqueeze(x, 1), name='expand_dim')
         att_list = list()
@@ -769,7 +780,13 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
         print('Before loss')
 
-        loss, logits, classifier_layer_outputs = hf_loss_func(combined_feats,
+        # fea_att_list = [combined_feats, fea_rubric]
+        keyword_feats = self.keyword_MLP(fea_rubric.float())
+        print('Combined feats shape', combined_feats.shape)
+        print('Keyword feats shape', keyword_feats.shape)
+        fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
+
+        loss, logits, classifier_layer_outputs = hf_loss_func(fea_att_list,
                                                               self.tabular_classifier,
                                                               labels,
                                                               self.num_labels,
