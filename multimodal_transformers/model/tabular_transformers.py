@@ -665,6 +665,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                           hidden_channels=dims,
                                           bn=True)
 
+        # dangerous harcoding, fix later
+        self.embedding_layer = nn.Embedding(5490, embedding_dim=300)
 
         self.att_layer = KeyAttention(
             name='attention',
@@ -677,7 +679,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         )
 
         # load embeddings
-        self.embedding_layer = nn.Embedding(self.config.vocab_size, embedding_dim=300)
+        # self.embedding_layer = nn.Embedding(self.config.vocab_size, embedding_dim=300)
         # self.embedding_layer = nn.Embedding.from_pretrained(torch.from_numpy(tabular_config.embedding_weights).float(), freeze=True)
     @add_start_docstrings(LONGFORMER_INPUTS_DOCSTRING.format("(batch_size, sequence_length)"))
     def forward(
