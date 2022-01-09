@@ -104,8 +104,8 @@ class KeyAttention(nn.Module):
 
         print('mask_ans_inf.shape', mask_ans_inf.shape)
         print('mask_key_inf.shape', mask_key_inf.shape)
-        print('mask_ans_inf', mask_ans_inf)
-        print('mask_key_inf', mask_key_inf)
+        # print('mask_ans_inf', mask_ans_inf)
+        # print('mask_key_inf', mask_key_inf)
 
         mask_ans_inf_1 = torch.unsqueeze(mask_ans_inf, 1)
         mask_key_inf_1 = torch.unsqueeze(mask_key_inf, 1)
@@ -114,29 +114,29 @@ class KeyAttention(nn.Module):
 
         print('mask_ans_inf_1.shape', mask_ans_inf.shape)
         print('mask_key_inf_1.shape', mask_key_inf.shape)
-        print('mask_ans_inf_1', mask_ans_inf)
-        print('mask_key_inf_1', mask_key_inf)
+        # print('mask_ans_inf_1', mask_ans_inf)
+        # print('mask_key_inf_1', mask_key_inf)
 
         mask_ans_2 = torch.unsqueeze(mask_ans, 2)
         mask_key_2 = torch.unsqueeze(mask_key, 2)
 
         print('mask_ans_2.shape', mask_ans_2.shape)
         print('mask_key_2.shape', mask_key_2.shape)
-        print('mask_ans_2', mask_ans_2)
-        print('mask_key_2', mask_key_2)
+        # print('mask_ans_2', mask_ans_2)
+        # print('mask_key_2', mask_key_2)
 
         ans = ans * mask_ans_2
         key = key * mask_key_2
 
         print('ans.shape', ans.shape)
         print('key.shape', key.shape)
-        print('ans', ans)
-        print('key', key)
+        # print('ans', ans)
+        # print('key', key)
 
         Z_dp = torch.bmm(key, torch.permute(ans, (0, 2, 1)))
 
         print('Z_dp.shape', Z_dp.shape)
-        print('Z_dp', Z_dp)
+        # print('Z_dp', Z_dp)
         # Z_dp = K.batch_dot(key, K.permute_dimensions(ans, (0, 2, 1)))
 
         norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-8)))
