@@ -139,8 +139,8 @@ class KeyAttention(nn.Module):
         # print('Z_dp', Z_dp)
         # Z_dp = K.batch_dot(key, K.permute_dimensions(ans, (0, 2, 1)))
 
-        norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-8)))
-        norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), torch.tensor(1e-8)))
+        norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-7)))
+        norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), torch.tensor(1e-7)))
 
         norm_repeat_ans = torch.repeat_interleave(norm_ans, self.token_num_key, dim=0).reshape(2, self.token_num_key, self.token_num_ans)
         norm_repeat_key = torch.repeat_interleave(norm_key, self.token_num_ans, dim=0).reshape(2, self.token_num_ans, self.token_num_key)
