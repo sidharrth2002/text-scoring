@@ -649,7 +649,10 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         self.num_labels = tabular_config.num_labels
         combined_feat_dim = self.tabular_combiner.final_out_dim
         self.dropout = nn.Dropout(hf_model_config.hidden_dropout_prob)
-        self.keyword_MLP = MLP(1200, 20, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+
+        print('Keyword MLP out dim is ', tabular_config.keyword_MLP_out_dim)
+
+        self.keyword_MLP = MLP(1200, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
 
         if tabular_config.use_simple_classifier:
             self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
