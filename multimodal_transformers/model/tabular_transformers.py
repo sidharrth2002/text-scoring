@@ -649,10 +649,10 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         self.num_labels = tabular_config.num_labels
         combined_feat_dim = self.tabular_combiner.final_out_dim
         self.dropout = nn.Dropout(hf_model_config.hidden_dropout_prob)
+        self.batch_size = 2
+        # print('Keyword MLP out dim is ', tabular_config.keyword_MLP_out_dim)
 
-        print('Keyword MLP out dim is ', tabular_config.keyword_MLP_out_dim)
-
-        self.keyword_MLP = MLP(1200, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+        self.keyword_MLP = MLP(300 * tabular_config.num_keywords * self.batch_size, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
 
         if tabular_config.use_simple_classifier:
             self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
@@ -727,12 +727,12 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         sequence_output = outputs[0]
         text_feats = sequence_output[:, 0, :]
         text_feats = self.dropout(text_feats)
-        print('Sequence Outputs Shape')
-        print(sequence_output.shape)
-        print('Text Feats Shape')
-        print(text_feats.shape)
-        print('Cat Feats Shape')
-        print(cat_feats.shape)
+        # print('Sequence Outputs Shape')
+        # print(sequence_output.shape)
+        # print('Text Feats Shape')
+        # print(text_feats.shape)
+        # print('Cat Feats Shape')
+        # print(cat_feats.shape)
         combined_feats = self.tabular_combiner(text_feats,
                                                cat_feats,
                                                numerical_feats,
@@ -751,25 +751,26 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         # was this causing CUDA error
         for i in range(keyword_tokens.shape[0]):
             t_k = LambdaLayer(lambda x: x[:, i], name='key_%d' % i)(keys_emb)
-            t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_tokens)
+            t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_mask)
+            # t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_tokens)
 
             f, *att_rtn = self.att_layer([ans_emb, answer_mask, t_k, t_k_m])
 
             fea_att_list.append(f)
 
-        for i_a_r, a_r in enumerate(att_rtn):
-            attentions[att_rtn_keys[i_a_r]].append(a_r)
+            for i_a_r, a_r in enumerate(att_rtn):
+                attentions[att_rtn_keys[i_a_r]].append(a_r)
 
         # do something with this- represents keyword attention
-        print('fea_att_list.shape', len(fea_att_list))
-        print('fea_att_list', fea_att_list)
-        print('Shapes of items in fea_att_list')
+        # print('fea_att_list.shape', len(fea_att_list))
+        # print('fea_att_list', fea_att_list)
+        # print('Shapes of items in fea_att_list')
         for item in fea_att_list:
             print(item.shape)
         fea_rubric = torch.cat(fea_att_list, dim=1)
 
-        print('fea_rubric shape', fea_rubric.shape)
-        print('fea_rubric', fea_rubric)
+        # print('fea_rubric shape', fea_rubric.shape)
+        # print('fea_rubric', fea_rubric)
 
         layer_exp_dim = LambdaLayer(lambda x: torch.unsqueeze(x, 1), name='expand_dim')
         att_list = list()
@@ -784,12 +785,12 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             attentions[k] = att_exp
             att_list.append(att_exp)
 
-        print('Before loss')
+        # print('Before loss')
 
         # fea_att_list = [combined_feats, fea_rubric]
         keyword_feats = self.keyword_MLP(fea_rubric.float())
-        print('Combined feats shape', combined_feats.shape)
-        print('Keyword feats shape', keyword_feats.shape)
+        # print('Combined feats shape', combined_feats.shape)
+        # print('Keyword feats shape', keyword_feats.shape)
         fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
 
         loss, logits, classifier_layer_outputs = hf_loss_func(fea_att_list,
@@ -798,6 +799,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                                               self.num_labels,
                                                               class_weights)
 
-        print('After loss')
+        # print('After loss')
 
         return loss, logits, classifier_layer_outputs
