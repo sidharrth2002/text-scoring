@@ -709,7 +709,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         keyword_mask=None
     ):
         if global_attention_mask is None:
-            print("Initializing global attention on CLS token...")
+            # print("Initializing global attention on CLS token...")
             global_attention_mask = torch.zeros_like(input_ids)
             # global attention on cls token
             global_attention_mask[:, 0] = 1
@@ -768,8 +768,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         # print('fea_att_list.shape', len(fea_att_list))
         # print('fea_att_list', fea_att_list)
         # print('Shapes of items in fea_att_list')
-        for item in fea_att_list:
-            print(item.shape)
+        # for item in fea_att_list:
+        #     print(item.shape)
         fea_rubric = torch.cat(fea_att_list, dim=1)
 
         # print('fea_rubric shape', fea_rubric.shape)
