@@ -751,7 +751,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         attentions = {k: list() for k in att_rtn_keys}
 
         # was this causing CUDA error
-        for i in range(keyword_tokens.shape[0]):
+        # first dimension is batch size
+        for i in range(keyword_tokens.shape[1]):
             t_k = LambdaLayer(lambda x: x[:, i], name='key_%d' % i)(keys_emb)
             t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_mask)
             # t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_tokens)
