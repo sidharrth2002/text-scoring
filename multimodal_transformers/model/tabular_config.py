@@ -30,6 +30,7 @@ class TabularConfig:
                  cat_feat_dim=0,
                  keyword_attention_dim=0,
                  vocab_size=0,
+                 num_keywords=0,
                  keyword_MLP_out_dim=0,
                  **kwargs
                  ):
@@ -45,4 +46,5 @@ class TabularConfig:
         self.num_labels = num_labels
         self.keyword_attention_dim = keyword_attention_dim
         self.vocab_size = vocab_size
+        self.num_keywords = num_keywords
         self.keyword_MLP_out_dim = keyword_MLP_out_dim
