@@ -37,7 +37,8 @@ class TorchTabularTextDataset(TorchDataset):
                  labels=None,
                  df=None,
                  label_list=None,
-                 class_weights=None
+                 class_weights=None,
+                 texts=None
                  ):
         self.df = df
         self.encodings = encodings
@@ -50,6 +51,7 @@ class TorchTabularTextDataset(TorchDataset):
         self.labels = labels
         self.class_weights = class_weights
         self.label_list = label_list if label_list is not None else [i for i in range(len(np.unique(labels)))]
+        self.texts = texts
 
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx])
@@ -63,6 +65,7 @@ class TorchTabularTextDataset(TorchDataset):
         item['answer_mask'] = torch.tensor(self.answer_mask[idx])
         item['keyword_tokens'] = torch.tensor(self.keyword_tokens)
         item['keyword_mask'] = torch.tensor(self.keyword_mask)
+        item['text'] = self.texts[idx]
         return item
 
     def __len__(self):
