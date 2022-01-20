@@ -151,7 +151,9 @@ class KeyAttention(nn.Module):
         # print('norm_key.shape:', norm_key.shape)
         # print('norm_repeat_key:', norm_repeat_key.shape)
         # print('norm_repeat_ans:', norm_repeat_ans.shape)
-        norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
+
+        # why permute again?
+        # norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
 
         Z_cos = Z_dp / (norm_repeat_key * norm_repeat_ans)
 
