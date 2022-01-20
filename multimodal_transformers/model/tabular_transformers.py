@@ -26,6 +26,7 @@ from .tabular_combiner import TabularFeatCombiner
 from .tabular_config import TabularConfig
 from .layer_utils import MLP, calc_mlp_dims, hf_loss_func
 
+import pickle
 
 class BertWithTabular(BertForSequenceClassification):
     """
@@ -683,6 +684,9 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             beta=False
         )
 
+        self.save_attentions = tabular_config.save_attentions
+        self.attentions_path = tabular_config.attentions_path
+
         # load embeddings
         # self.embedding_layer = nn.Embedding(self.config.vocab_size, embedding_dim=300)
         # self.embedding_layer = nn.Embedding.from_pretrained(torch.from_numpy(tabular_config.embedding_weights).float(), freeze=True)
@@ -803,5 +807,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                                               class_weights)
 
         # print('After loss')
+        if self.save_attentions:
+            with open(self.attentions_path, 'wb') as handle:
+                pickle.dump(attentions, handle)
 
         return loss, logits, classifier_layer_outputs

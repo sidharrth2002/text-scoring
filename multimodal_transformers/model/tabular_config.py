@@ -1,8 +1,5 @@
 class TabularConfig:
     r""" Config used for tabular combiner
-
-
-
     Args:
         mlp_division (int): how much to decrease each MLP dim for each additional layer
         combine_feat_method (str): The method to combine categorical and numerical features.
@@ -15,7 +12,8 @@ class TabularConfig:
             see the paper `Integrating Multimodal Information in Large Pretrained Transformers <https://www.aclweb.org/anthology/2020.acl-main.214.pdf>`_ for details
         numerical_feat_dim (int): the number of numerical features
         cat_feat_dim (int): the number of categorical features
-
+        save_attentions (bool): whether to save the attentions as a pickle
+        attentions_path (str): the path to save the attentions
     """
     def __init__(self,
                  num_labels,
@@ -32,6 +30,8 @@ class TabularConfig:
                  vocab_size=0,
                  num_keywords=0,
                  keyword_MLP_out_dim=0,
+                 save_attentions=False,
+                 attentions_path=None,
                  **kwargs
                  ):
         self.mlp_division = mlp_division
@@ -48,3 +48,5 @@ class TabularConfig:
         self.vocab_size = vocab_size
         self.num_keywords = num_keywords
         self.keyword_MLP_out_dim = keyword_MLP_out_dim
+        self.save_attentions = save_attentions
+        self.attentions_path = attentions_path
