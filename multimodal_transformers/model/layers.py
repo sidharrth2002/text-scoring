@@ -153,14 +153,14 @@ class KeyAttention(nn.Module):
         # print('norm_repeat_ans:', norm_repeat_ans.shape)
 
         # why permute again?
-        # norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
+        norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
 
         Z_cos = Z_dp / (norm_repeat_key * norm_repeat_ans)
 
         if self.op == "dp":
             Z = Z_dp
         elif self.op == "sdp":
-            Z = Z_dp / torch.sqrt(self.bias)
+            Z = Z_dp / torch.sqrt(self.emb_dim)
         elif self.op == "gen":
             Z = torch.dot(key, self._M)
             # Z = K.batch_dot(Z, torch.permute(ans, (0, 2, 1)))
