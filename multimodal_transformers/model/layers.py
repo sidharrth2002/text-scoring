@@ -40,6 +40,7 @@ class KeyAttention(nn.Module):
                  word_att_pool='max',
                  merge_ans_key='concat',
                  beta=False,
+                 batch_size=2,
                  **kwargs):
         super(KeyAttention, self).__init__(**kwargs)
         self.op = op
@@ -55,7 +56,7 @@ class KeyAttention(nn.Module):
         self.token_num_key = 10
         self.token_num_ans = 1024
         self.mask_pad = True
-        self.batch_size = 2
+        self.batch_size = batch_size
         # self.init_weights()
 
     # def init_weights(self, input_shape):

@@ -32,6 +32,8 @@ class TabularConfig:
                  keyword_MLP_out_dim=0,
                  save_attentions=False,
                  attentions_path=None,
+                 add_attention_module=False,
+                 batch_size=2,
                  **kwargs
                  ):
         self.mlp_division = mlp_division
@@ -50,3 +52,5 @@ class TabularConfig:
         self.keyword_MLP_out_dim = keyword_MLP_out_dim
         self.save_attentions = save_attentions
         self.attentions_path = attentions_path
+        self.add_attention_module = add_attention_module
+        self.batch_size = batch_size
