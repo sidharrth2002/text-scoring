@@ -690,9 +690,10 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                             bn=True)
 
         # dangerous harcoding, fix later
-        self.embedding_layer = nn.Embedding(num_embeddings=5490, embedding_dim=300)
 
         if self.add_attention_module:
+            self.embedding_layer = nn.Embedding(num_embeddings=5490, embedding_dim=300)
+
             self.att_layer = KeyAttention(
                 name='attention',
                 op='dp',
