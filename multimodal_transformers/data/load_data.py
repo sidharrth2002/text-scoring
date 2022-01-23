@@ -461,4 +461,4 @@ def load_data(data_df,
     keyword_mask.masked_fill_(keyword_tokens != 0, 1)
 
     return TorchTabularTextDataset(hf_model_text_input, categorical_feats,
-                                   numerical_feats, answer_tokens, answer_mask, keyword_tokens, keyword_mask, labels, data_df, label_list, texts=texts_list, lemmatized_tokens=answer_lemmatized_tokens, lemmatized_texts=lemmatized_texts_list)
+                                   numerical_feats, answer_tokens, answer_mask, keyword_tokens, keyword_mask, labels, data_df, label_list, texts=texts_list, lemmatized_answer_tokens=answer_lemmatized_tokens, lemmatized_answer_texts=lemmatized_texts_list)
