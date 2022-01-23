@@ -661,7 +661,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             # FIXME: change * 2 to * self.batch_size
             # It does not work when * 4
             print('Number of keywords is ', tabular_config.num_keywords)
-            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * 2, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[1200], bn=True)
+            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * self.batch_size, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
 
         if tabular_config.use_simple_classifier:
             if self.add_attention_module:
@@ -692,6 +692,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                             bn=True)
 
         # dangerous harcoding, fix later
+
+        print('The batch size is ', self.batch_size)
 
         if self.add_attention_module:
             self.embedding_layer = nn.Embedding(num_embeddings=5490, embedding_dim=300)
@@ -818,10 +820,10 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
             # fea_att_list = [combined_feats, fea_rubric]
             keyword_feats = self.keyword_MLP(fea_rubric.float())
-            # print('Combined feats shape', combined_feats.shape)
-            # print('Keyword feats shape', keyword_feats.shape)
+            print('Combined feats shape', combined_feats.shape)
+            print('Keyword feats shape', keyword_feats.shape)
             fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
-
+            print('fea_att_list shape', fea_att_list.shape)
             loss, logits, classifier_layer_outputs = hf_loss_func(fea_att_list,
                                                                 self.tabular_classifier,
                                                                 labels,
