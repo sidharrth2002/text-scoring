@@ -661,10 +661,12 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             # FIXME: change * 2 to * self.batch_size
             # It does not work when * 4
             print('Number of keywords is ', tabular_config.num_keywords)
-            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * self.batch_size, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * 2, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
 
         if tabular_config.use_simple_classifier:
             if self.add_attention_module:
+                print('Combined Feat Dim is ', combined_feat_dim)
+                print('keyword MLP out dim is ', self.keyword_MLP.out_dim)
                 self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
                                                     tabular_config.num_labels)
             else:
