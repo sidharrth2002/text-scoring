@@ -428,7 +428,13 @@ def load_data(data_df,
 
     for i, text in enumerate(texts_list):
         texts_list[i] = f' {sep_text_token_str} '.join(text)
+
+    for i, text in enumerate(lemmatized_texts_list):
+        lemmatized_texts_list[i] = f' {sep_text_token_str} '.join(text)
+
     logger.info(f'Raw text example: {texts_list[0]}')
+    logger.info(f'Lemmatized text example: {lemmatized_texts_list[0]}')
+
     hf_model_text_input = tokenizer(texts_list, padding="max_length", truncation=True,
                                     max_length=max_token_length)
     tokenized_text_ex = ' '.join(tokenizer.convert_ids_to_tokens(hf_model_text_input['input_ids'][0]))
