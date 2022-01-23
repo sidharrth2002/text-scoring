@@ -659,7 +659,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
         if self.add_attention_module:
             print('Number of keywords is ', tabular_config.num_keywords)
-            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * self.batch_size, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * self.batch_size, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[1200], bn=True)
 
         if tabular_config.use_simple_classifier:
             if self.add_attention_module:
