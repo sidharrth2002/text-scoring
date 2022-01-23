@@ -452,7 +452,7 @@ def load_data(data_df,
     answer_mask = torch.zeros(answer_lemmatized_tokens.shape, dtype=torch.long)
     # print(torch.Tensor(answer_tokens))
     # FIXME: this is a hack to get the mask to work, I'm going to remove the part that makes it a tensor: answer_mask = torch.Tensor(answer_tokens)
-    answer_mask.masked_fill_(answer_mask != 0, 1)
+    answer_mask.masked_fill_(torch.Tensor(answer_mask) != 0, 1)
 
     keyword_tokens = glove_tokenizer.texts_to_sequences(keywords)
     keyword_tokens = pad_sequences(keyword_tokens, maxlen=max_keyword_length)
