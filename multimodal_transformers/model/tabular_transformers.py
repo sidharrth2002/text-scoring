@@ -728,7 +728,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
         answer_tokens=None,
         keyword_tokens=None,
         answer_mask=None,
-        keyword_mask=None
+        keyword_mask=None,
+        lemmatized_answer_tokens=None,
     ):
         if global_attention_mask is None:
             # print("Initializing global attention on CLS token...")
@@ -763,7 +764,7 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                             )
 
         if self.add_attention_module:
-            ans_emb = self.embedding_layer(answer_tokens)
+            ans_emb = self.embedding_layer(lemmatized_answer_tokens)
             ans_mask_emb = self.embedding_layer(answer_mask)
             keys_emb = self.embedding_layer(keyword_tokens)
             keys_mask_emb = self.embedding_layer(keyword_mask)

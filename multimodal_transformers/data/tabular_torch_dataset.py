@@ -38,7 +38,9 @@ class TorchTabularTextDataset(TorchDataset):
                  df=None,
                  label_list=None,
                  class_weights=None,
-                 texts=None
+                 texts=None,
+                 lemmatized_answer_tokens=None,
+                 lemmatized_answer_texts=None
                  ):
         self.df = df
         self.encodings = encodings
@@ -52,6 +54,8 @@ class TorchTabularTextDataset(TorchDataset):
         self.class_weights = class_weights
         self.label_list = label_list if label_list is not None else [i for i in range(len(np.unique(labels)))]
         self.texts = texts
+        self.lemmatized_answer_tokens = lemmatized_answer_tokens
+        self.lemmatized_answer_texts = lemmatized_answer_texts
 
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx])
@@ -66,6 +70,8 @@ class TorchTabularTextDataset(TorchDataset):
         item['keyword_tokens'] = torch.tensor(self.keyword_tokens)
         item['keyword_mask'] = torch.tensor(self.keyword_mask)
         item['text'] = self.texts[idx]
+        item['lemmatized_answer_tokens'] = torch.tensor(self.lemmatized_answer_tokens[idx])
+        item['lemmatized_text'] = self.lemmatized_answer_texts[idx]
         return item
 
     def __len__(self):

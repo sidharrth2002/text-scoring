@@ -422,12 +422,10 @@ def load_data(data_df,
     agg_func = partial(agg_text_columns_func, empty_text_values, replace_empty_text)
     texts_cols = get_matching_cols(data_df, text_cols_func)
     logger.info(f'Text columns: {texts_cols}')
-    print('Data df last time')
-    print(data_df.shape)
-    print(data_df.index)
-    print(data_df)
-    print(texts_cols)
+
     texts_list = data_df[texts_cols].agg(agg_func, axis=1).tolist()
+    lemmatized_texts_list = data_df['lemmatized'].agg(agg_func, axis=1).tolist()
+
     for i, text in enumerate(texts_list):
         texts_list[i] = f' {sep_text_token_str} '.join(text)
     logger.info(f'Raw text example: {texts_list[0]}')
@@ -437,14 +435,17 @@ def load_data(data_df,
     logger.debug(f'Tokenized text example: {tokenized_text_ex}')
     labels = data_df[label_col].values
 
-    print(glove_tokenizer)
-
     answer_tokens = glove_tokenizer.texts_to_sequences(texts_list)
     answer_tokens = pad_sequences(answer_tokens, maxlen=max_token_length, padding='post', truncating='post')
+
+    answer_lemmatized_tokens = glove_tokenizer.texts_to_sequences(lemmatized_texts_list)
+    answer_lemmatized_tokens = pad_sequences(answer_lemmatized_tokens, maxlen=max_token_length, padding='post', truncating='post')
+
     # create mask
-    answer_mask = torch.zeros(answer_tokens.shape, dtype=torch.long)
-    print(torch.Tensor(answer_tokens))
-    answer_mask.masked_fill_(torch.Tensor(answer_tokens) != 0, 1)
+    # change to lemmatized mask
+    answer_mask = torch.zeros(answer_lemmatized_tokens.shape, dtype=torch.long)
+    # print(torch.Tensor(answer_tokens))
+    answer_mask.masked_fill_(torch.Tensor(answer_mask) != 0, 1)
 
     keyword_tokens = glove_tokenizer.texts_to_sequences(keywords)
     keyword_tokens = pad_sequences(keyword_tokens, maxlen=max_keyword_length)
@@ -453,4 +454,4 @@ def load_data(data_df,
     keyword_mask.masked_fill_(keyword_tokens != 0, 1)
 
     return TorchTabularTextDataset(hf_model_text_input, categorical_feats,
-                                   numerical_feats, answer_tokens, answer_mask, keyword_tokens, keyword_mask, labels, data_df, label_list, texts=texts_list)
+                                   numerical_feats, answer_tokens, answer_mask, keyword_tokens, keyword_mask, labels, data_df, label_list, texts=texts_list, lemmatized_tokens=answer_lemmatized_tokens, lemmatized_texts=lemmatized_texts_list)
