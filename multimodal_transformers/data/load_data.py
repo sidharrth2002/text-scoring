@@ -455,7 +455,7 @@ def load_data(data_df,
     answer_mask.masked_fill_(answer_mask != 0, 1)
 
     keyword_tokens = glove_tokenizer.texts_to_sequences(keywords)
-    keyword_tokens = pad_sequences(keyword_tokens, maxlen=max_keyword_length, padding='post', truncating='post')
+    keyword_tokens = pad_sequences(keyword_tokens, maxlen=max_keyword_length)
     keyword_tokens = torch.reshape(torch.from_numpy(keyword_tokens), (len(keywords), max_keyword_length))
     keyword_mask = torch.zeros(keyword_tokens.shape, dtype=torch.long)
     keyword_mask.masked_fill_(keyword_tokens != 0, 1)
