@@ -424,7 +424,7 @@ def load_data(data_df,
     logger.info(f'Text columns: {texts_cols}')
 
     texts_list = data_df[texts_cols].agg(agg_func, axis=1).tolist()
-    lemmatized_texts_list = data_df['lemmatized'].agg(agg_func, axis=1).tolist()
+    lemmatized_texts_list = data_df[['lemmatized']].agg(agg_func, axis=1).tolist()
 
     for i, text in enumerate(texts_list):
         texts_list[i] = f' {sep_text_token_str} '.join(text)
