@@ -693,7 +693,8 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
         # dangerous harcoding, fix later
         if self.add_attention_module:
-            self.embedding_layer = nn.Embedding(num_embeddings=5490, embedding_dim=300)
+            print('Vocab size is ', tabular_config.vocab_size)
+            self.embedding_layer = nn.Embedding(num_embeddings=tabular_config.vocab_size, embedding_dim=300)
 
             self.att_layer = KeyAttention(
                 name='attention',
