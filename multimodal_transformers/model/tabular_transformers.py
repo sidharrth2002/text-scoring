@@ -765,8 +765,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
                                             )
 
         if self.add_attention_module:
-            print('Lemmatized Answer Tokens', lemmatized_answer_tokens)
-            print('Answer Mask', answer_mask)
             ans_emb = self.embedding_layer(lemmatized_answer_tokens)
             ans_mask_emb = self.embedding_layer(answer_mask)
             keys_emb = self.embedding_layer(keyword_tokens)
@@ -790,8 +788,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
                 for i_a_r, a_r in enumerate(att_rtn):
                     attentions[att_rtn_keys[i_a_r]].append(a_r)
-
-            print('fea_att_list', fea_att_list)
 
             # do something with this- represents keyword attention
             # print('fea_att_list.shape', len(fea_att_list))
@@ -819,9 +815,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
 
             # print('Before loss')
 
-            print('fea_rubric')
-            print(fea_rubric)
-
             # fea_att_list = [combined_feats, fea_rubric]
             keyword_feats = self.keyword_MLP(fea_rubric.float())
             fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
@@ -833,8 +826,6 @@ class LongformerWithTabular(LongformerForSequenceClassification):
             if self.save_attentions:
                 with open(self.attentions_path, 'wb') as handle:
                     pickle.dump(attentions, handle)
-
-            print(loss)
 
             return loss, logits, classifier_layer_outputs
 
