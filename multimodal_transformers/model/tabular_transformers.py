@@ -49,6 +49,10 @@ class BertWithTabular(BertForSequenceClassification):
         else:
             self.config.tabular_config = tabular_config.__dict__
 
+        self.add_attention_module = tabular_config.add_attention_module
+        self.save_attentions = tabular_config.save_attentions
+        self.attentions_path = tabular_config.attentions_path
+
         tabular_config.text_feat_dim = hf_model_config.hidden_size
         tabular_config.hidden_dropout_prob = hf_model_config.hidden_dropout_prob
         self.tabular_combiner = TabularFeatCombiner(tabular_config)
@@ -214,12 +218,15 @@ class BertWithTabular(BertForSequenceClassification):
                 attentions[k] = att_exp
                 att_list.append(att_exp)
 
-            # print('Before loss')
-
-            # fea_att_list = [combined_feats, fea_rubric]
             keyword_feats = self.keyword_MLP(fea_rubric.float())
-            fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
-            loss, logits, classifier_layer_outputs = hf_loss_func(fea_att_list,
+
+            # straight away combine Text Features + Categorical Features + Numerical Features
+            combined_feats = self.tabular_combiner(pooled_output,
+                                               cat_feats,
+                                               numerical_feats,
+                                               keyword_feats=keyword_feats)
+
+            loss, logits, classifier_layer_outputs = hf_loss_func(combined_feats,
                                                                 self.tabular_classifier,
                                                                 labels,
                                                                 self.num_labels,
@@ -231,6 +238,10 @@ class BertWithTabular(BertForSequenceClassification):
             return loss, logits, classifier_layer_outputs
 
         else:
+            combined_feats = self.tabular_combiner(pooled_output,
+                                               cat_feats,
+                                               numerical_feats)
+
             loss, logits, classifier_layer_outputs = hf_loss_func(combined_feats,
                                                                 self.tabular_classifier,
                                                                 labels,
