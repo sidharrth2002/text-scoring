@@ -54,19 +54,58 @@ class BertWithTabular(BertForSequenceClassification):
         self.tabular_combiner = TabularFeatCombiner(tabular_config)
         self.num_labels = tabular_config.num_labels
         combined_feat_dim = self.tabular_combiner.final_out_dim
+        self.dropout = nn.Dropout(hf_model_config.hidden_dropout_prob)
+        self.batch_size = tabular_config.batch_size
+
+        if self.add_attention_module:
+            print('Number of keywords is ', tabular_config.num_keywords)
+            self.keyword_MLP = MLP(300 * tabular_config.num_keywords * 2, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
+
         if tabular_config.use_simple_classifier:
-            self.tabular_classifier = nn.Linear(combined_feat_dim,
-                                                tabular_config.num_labels)
+            if self.add_attention_module:
+                print('Combined Feat Dim is ', combined_feat_dim)
+                print('keyword MLP out dim is ', self.keyword_MLP.out_dim)
+                self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
+                                                    tabular_config.num_labels)
+            else:
+                self.tabular_classifier = nn.Linear(combined_feat_dim, tabular_config.num_labels)
         else:
-            dims = calc_mlp_dims(combined_feat_dim,
-                                 division=tabular_config.mlp_division,
-                                 output_dim=tabular_config.num_labels)
-            self.tabular_classifier = MLP(combined_feat_dim,
-                                          tabular_config.num_labels,
-                                          num_hidden_lyr=len(dims),
-                                          dropout_prob=tabular_config.mlp_dropout,
-                                          hidden_channels=dims,
-                                          bn=True)
+            if self.add_attention_module:
+                dims = calc_mlp_dims(combined_feat_dim + self.keyword_MLP.out_dim,
+                                    division=tabular_config.mlp_division,
+                                    output_dim=tabular_config.num_labels)
+                self.tabular_classifier = MLP(combined_feat_dim + self.keyword_MLP.out_dim,
+                                            tabular_config.num_labels,
+                                            num_hidden_lyr=len(dims),
+                                            dropout_prob=tabular_config.mlp_dropout,
+                                            hidden_channels=dims,
+                                            bn=True)
+            else:
+                dims = calc_mlp_dims(combined_feat_dim,
+                                    division=tabular_config.mlp_division,
+                                    output_dim=tabular_config.num_labels)
+                self.tabular_classifier = MLP(combined_feat_dim,
+                                            tabular_config.num_labels,
+                                            num_hidden_lyr=len(dims),
+                                            dropout_prob=tabular_config.mlp_dropout,
+                                            hidden_channels=dims,
+                                            bn=True)
+
+        # dangerous harcoding, fix later
+        if self.add_attention_module:
+            print('Vocab size is ', tabular_config.vocab_size)
+            self.embedding_layer = nn.Embedding(num_embeddings=tabular_config.vocab_size, embedding_dim=300)
+
+            self.att_layer = KeyAttention(
+                name='attention',
+                op='dp',
+                seed=0,
+                emb_dim=300,
+                word_att_pool='mean',
+                merge_ans_key='concat',
+                beta=False,
+                batch_size=self.batch_size
+            )
 
     @add_start_docstrings(BERT_INPUTS_DOCSTRING.format("(batch_size, sequence_length)"))
     def forward(
@@ -82,7 +121,12 @@ class BertWithTabular(BertForSequenceClassification):
         output_attentions=None,
         output_hidden_states=None,
         cat_feats=None,
-        numerical_feats=None
+        numerical_feats=None,
+        answer_tokens=None,
+        keyword_tokens=None,
+        answer_mask=None,
+        keyword_mask=None,
+        lemmatized_answer_tokens=None,
     ):
         r"""
         class_weights (:obj:`torch.FloatTensor` of shape :obj:`(tabular_config.num_labels,)`, `optional`, defaults to :obj:`None`):
@@ -121,12 +165,78 @@ class BertWithTabular(BertForSequenceClassification):
         combined_feats = self.tabular_combiner(pooled_output,
                                                cat_feats,
                                                numerical_feats)
-        loss, logits, classifier_layer_outputs = hf_loss_func(combined_feats,
-                                                              self.tabular_classifier,
-                                                              labels,
-                                                              self.num_labels,
-                                                              class_weights)
-        return loss, logits, classifier_layer_outputs
+        if self.add_attention_module:
+            ans_emb = self.embedding_layer(lemmatized_answer_tokens)
+            ans_mask_emb = self.embedding_layer(answer_mask)
+            keys_emb = self.embedding_layer(keyword_tokens)
+            keys_mask_emb = self.embedding_layer(keyword_mask)
+
+            att_rtn_keys = ('z', 'z_ans', 'z_key', 'beta_ans', 'beta_key')
+
+            fea_att_list = list()
+            attentions = {k: list() for k in att_rtn_keys}
+
+            # was this causing CUDA error
+            # first dimension is batch size
+            for i in range(keyword_tokens.shape[1]):
+                t_k = LambdaLayer(lambda x: x[:, i], name='key_%d' % i)(keys_emb)
+                t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_mask)
+                # t_k_m = LambdaLayer(lambda x: x[:, i], name='ans_%d' % i)(keyword_tokens)
+
+                f, *att_rtn = self.att_layer([ans_emb, answer_mask, t_k, t_k_m])
+
+                fea_att_list.append(f)
+
+                for i_a_r, a_r in enumerate(att_rtn):
+                    attentions[att_rtn_keys[i_a_r]].append(a_r)
+
+            # do something with this- represents keyword attention
+            # print('fea_att_list.shape', len(fea_att_list))
+            # print('fea_att_list', fea_att_list)
+            # print('Shapes of items in fea_att_list')
+            # for item in fea_att_list:
+            #     print(item.shape)
+            fea_rubric = torch.cat(fea_att_list, dim=1)
+
+            # print('fea_rubric shape', fea_rubric.shape)
+            # print('fea_rubric', fea_rubric)
+
+            layer_exp_dim = LambdaLayer(lambda x: torch.unsqueeze(x, 1), name='expand_dim')
+            att_list = list()
+
+            for k in attentions:
+                att_k = attentions[k]
+                att_exp = [layer_exp_dim(m) for m in att_k]
+                if len(att_exp) == 1:
+                    att_exp = att_exp[0]
+                else:
+                    att_exp = torch.cat(att_exp, dim=1)
+                attentions[k] = att_exp
+                att_list.append(att_exp)
+
+            # print('Before loss')
+
+            # fea_att_list = [combined_feats, fea_rubric]
+            keyword_feats = self.keyword_MLP(fea_rubric.float())
+            fea_att_list = torch.cat([combined_feats, keyword_feats], dim=1)
+            loss, logits, classifier_layer_outputs = hf_loss_func(fea_att_list,
+                                                                self.tabular_classifier,
+                                                                labels,
+                                                                self.num_labels,
+                                                                class_weights)
+            if self.save_attentions:
+                with open(self.attentions_path, 'wb') as handle:
+                    pickle.dump(attentions, handle)
+
+            return loss, logits, classifier_layer_outputs
+
+        else:
+            loss, logits, classifier_layer_outputs = hf_loss_func(combined_feats,
+                                                                self.tabular_classifier,
+                                                                labels,
+                                                                self.num_labels,
+                                                                class_weights)
+            return loss, logits, classifier_layer_outputs
 
 
 class RobertaWithTabular(RobertaForSequenceClassification):
