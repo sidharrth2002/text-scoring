@@ -109,8 +109,12 @@ class TabularFeatCombiner(nn.Module):
         if self.combine_feat_method == 'text_only':
             self.final_out_dim = self.text_out_dim
         elif self.combine_feat_method == 'concat':
-            self.final_out_dim = self.text_out_dim + self.cat_feat_dim \
-                           + self.numerical_feat_dim
+            if self.tabular_config.add_attention_module:
+                self.final_out_dim = self.text_out_dim + self.cat_feat_dim \
+                            + self.numerical_feat_dim + self.keyword_attention_dim
+            else:
+                self.final_out_dim = self.text_out_dim + self.cat_feat_dim \
+                            + self.numerical_feat_dim
         elif self.combine_feat_method == 'mlp_on_categorical_then_concat':
             assert self.cat_feat_dim != 0, 'dimension of cat feats should not be 0'
             # reduce dim of categorical features to same of num dim or text dim if necessary
@@ -323,9 +327,24 @@ class TabularFeatCombiner(nn.Module):
                                                             output_dim)))
                 self.bias_num = nn.Parameter(torch.zeros(output_dim))
 
+            if self.keyword_attention_dim > 0:
+                if self.keyword_attention_dim > self.text_out_dim:
+                    output_dim_num = self.text_out_dim
+                    dims = calc_mlp_dims(
+                        self.keyword_attention_dim,
+                        division=self.mlp_division,
+                        output_dim=output_dim_num)
+                else:
+                    output_dim_num = self.keyword_attention_dim
+
+                self.weight_keyword = nn.Parameter(torch.rand((output_dim_num,
+                                                            output_dim)))
+                self.bias_keyword = nn.Parameter(torch.zeros(output_dim))
+
+
             self.weight_transformer = nn.Parameter(torch.rand(self.text_out_dim,
                                                        output_dim))
-            self.weight_a = nn.Parameter(torch.rand((1, output_dim + output_dim)))
+            self.weight_a = nn.Parameter(torch.rand((1, output_dim + output_dim + output_dim)))
             self.bias_transformer = nn.Parameter(torch.rand(output_dim))
             self.bias = nn.Parameter(torch.zeros(output_dim))
             self.negative_slope = 0.2
@@ -404,8 +423,12 @@ class TabularFeatCombiner(nn.Module):
         if self.combine_feat_method == 'text_only':
             combined_feats = text_feats
         if self.combine_feat_method == 'concat':
-            combined_feats = torch.cat((text_feats, cat_feats, numerical_feats),
-                                       dim=1)
+            if self.tabular_config.add_attention_module:
+                combined_feats = torch.cat((text_feats, cat_feats, numerical_feats, keyword_feats),
+                                        dim=1)
+            else:
+                combined_feats = torch.cat((text_feats, cat_feats, numerical_feats),
+                                        dim=1)
         elif self.combine_feat_method == 'mlp_on_categorical_then_concat':
             cat_feats = self.cat_mlp(cat_feats)
             combined_feats = torch.cat((text_feats, cat_feats, numerical_feats), dim=1)
@@ -469,6 +492,8 @@ class TabularFeatCombiner(nn.Module):
             else:
                 w_num = None
                 g_num = torch.zeros(0, device=g_text.device)
+
+            # TODO: Complete this part
 
             alpha = torch.cat([g_text, g_cat, g_num], dim=1)  # N by 3
             alpha = F.leaky_relu(alpha, 0.02)
