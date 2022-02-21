@@ -62,23 +62,20 @@ class BertWithTabular(BertForSequenceClassification):
         self.batch_size = tabular_config.batch_size
 
         if self.add_attention_module:
-            print('Number of keywords is ', tabular_config.num_keywords)
             self.keyword_MLP = MLP(300 * tabular_config.num_keywords * 2, tabular_config.keyword_MLP_out_dim, num_hidden_lyr=1, dropout_prob=0.1, hidden_channels=[600], bn=True)
 
         if tabular_config.use_simple_classifier:
             if self.add_attention_module:
-                print('Combined Feat Dim is ', combined_feat_dim)
-                print('keyword MLP out dim is ', self.keyword_MLP.out_dim)
-                self.tabular_classifier = nn.Linear(combined_feat_dim + self.keyword_MLP.out_dim,
+                self.tabular_classifier = nn.Linear(combined_feat_dim,
                                                     tabular_config.num_labels)
             else:
                 self.tabular_classifier = nn.Linear(combined_feat_dim, tabular_config.num_labels)
         else:
             if self.add_attention_module:
-                dims = calc_mlp_dims(combined_feat_dim + self.keyword_MLP.out_dim,
+                dims = calc_mlp_dims(combined_feat_dim,
                                     division=tabular_config.mlp_division,
                                     output_dim=tabular_config.num_labels)
-                self.tabular_classifier = MLP(combined_feat_dim + self.keyword_MLP.out_dim,
+                self.tabular_classifier = MLP(combined_feat_dim,
                                             tabular_config.num_labels,
                                             num_hidden_lyr=len(dims),
                                             dropout_prob=tabular_config.mlp_dropout,
@@ -97,7 +94,6 @@ class BertWithTabular(BertForSequenceClassification):
 
         # dangerous harcoding, fix later
         if self.add_attention_module:
-            print('Vocab size is ', tabular_config.vocab_size)
             self.embedding_layer = nn.Embedding(num_embeddings=tabular_config.vocab_size, embedding_dim=300)
 
             self.att_layer = KeyAttention(
@@ -108,7 +104,8 @@ class BertWithTabular(BertForSequenceClassification):
                 word_att_pool='mean',
                 merge_ans_key='concat',
                 beta=False,
-                batch_size=self.batch_size
+                batch_size=self.batch_size,
+                tabular_config=tabular_config
             )
 
     @add_start_docstrings(BERT_INPUTS_DOCSTRING.format("(batch_size, sequence_length)"))
@@ -166,9 +163,7 @@ class BertWithTabular(BertForSequenceClassification):
         )
         pooled_output = outputs[1]
         pooled_output = self.dropout(pooled_output)
-        combined_feats = self.tabular_combiner(pooled_output,
-                                               cat_feats,
-                                               numerical_feats)
+
         if self.add_attention_module:
             ans_emb = self.embedding_layer(lemmatized_answer_tokens)
             ans_mask_emb = self.embedding_layer(answer_mask)

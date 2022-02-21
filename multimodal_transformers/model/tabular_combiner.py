@@ -110,11 +110,9 @@ class TabularFeatCombiner(nn.Module):
             self.final_out_dim = self.text_out_dim
         elif self.combine_feat_method == 'concat':
             if self.tabular_config.add_attention_module:
-                self.final_out_dim = self.text_out_dim + self.cat_feat_dim \
-                            + self.numerical_feat_dim + self.keyword_attention_dim
+                self.final_out_dim = self.text_out_dim + self.cat_feat_dim + self.numerical_feat_dim + self.tabular_config.keyword_MLP_out_dim
             else:
-                self.final_out_dim = self.text_out_dim + self.cat_feat_dim \
-                            + self.numerical_feat_dim
+                self.final_out_dim = self.text_out_dim + self.cat_feat_dim + self.numerical_feat_dim
         elif self.combine_feat_method == 'mlp_on_categorical_then_concat':
             assert self.cat_feat_dim != 0, 'dimension of cat feats should not be 0'
             # reduce dim of categorical features to same of num dim or text dim if necessary
@@ -141,8 +139,10 @@ class TabularFeatCombiner(nn.Module):
             assert self.numerical_feat_dim != 0, 'dimension of numerical feats should not be 0'
 
             if self.tabular_config.add_attention_module:
-                output_dim = min(self.numerical_feat_dim, self.cat_feat_dim, tabular_config.keyword_MLP_out_dim, self.text_out_dim)
-                in_dim = self.cat_feat_dim + self.numerical_feat_dim + tabular_config.keyword_MLP_out_dim + self.text_out_dim
+                # FIXME: remove self.cat_feat_dim from calc of output_dim because only one att
+                output_dim = min(self.numerical_feat_dim, tabular_config.keyword_MLP_out_dim, self.text_out_dim)
+                in_dim = self.cat_feat_dim + self.numerical_feat_dim + tabular_config.keyword_MLP_out_dim
+
                 dims = calc_mlp_dims(
                     in_dim,
                     self.mlp_division,
@@ -160,7 +160,7 @@ class TabularFeatCombiner(nn.Module):
                 )
                 self.final_out_dim = self.text_out_dim + output_dim
             else:
-                output_dim = min(self.numerical_feat_dim, self.cat_feat_dim, self.text_out_dim)
+                output_dim = min(self.numerical_feat_dim, self.text_out_dim)
                 in_dim = self.cat_feat_dim + self.numerical_feat_dim
                 dims = calc_mlp_dims(
                     in_dim,

@@ -34,6 +34,7 @@ class TabularConfig:
                  attentions_path=None,
                  add_attention_module=False,
                  batch_size=2,
+                 num_words=150,
                  **kwargs
                  ):
         self.mlp_division = mlp_division
@@ -54,3 +55,4 @@ class TabularConfig:
         self.attentions_path = attentions_path
         self.add_attention_module = add_attention_module
         self.batch_size = batch_size
+        self.num_words = num_words

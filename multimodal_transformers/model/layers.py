@@ -40,7 +40,8 @@ class KeyAttention(nn.Module):
                  word_att_pool='max',
                  merge_ans_key='concat',
                  beta=False,
-                 batch_size=2,
+                 batch_size=32,
+                 tabular_config=None,
                  **kwargs):
         super(KeyAttention, self).__init__(**kwargs)
         self.op = op
@@ -53,49 +54,16 @@ class KeyAttention(nn.Module):
         self.M = None
         self.v = None
         self.bias = None
-        self.token_num_key = 10
-        self.token_num_ans = 1024
+        self.token_num_key = 16
+        self.token_num_ans = tabular_config.num_words
         self.mask_pad = True
         self.batch_size = batch_size
-        # self.init_weights()
-
-    # def init_weights(self, input_shape):
-    #     self.token_num_ans = input_shape[0][1]
-    #     self.token_num_key = input_shape[1][1]
-    #     if self.seed != -1:
-    #         torch.manual_seed(self.seed)
-    #     if self.op == 'dp':
-    #         self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
-    #         torch.nn.init.xavier_uniform_(self.W)
-    #         torch.nn.init.constant_(self.bias, 0)
-    #     elif self.op == 'sdp':
-    #         self.W = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
-    #         torch.nn.init.xavier_uniform_(self.W)
-    #         torch.nn.init.constant_(self.bias, 0)
-    #     elif self.op == 'gen':
-    #         self.M = Parameter(torch.Tensor(self.emb_dim, self.emb_dim))
-    #         self.bias = Parameter(torch.Tensor(self.emb_dim))
-    #         torch.nn.init.xavier_uniform_(self.M)
-    #         torch.nn.init.constant_(self.bias, 0)
-    #     super(KeyAttention, self).init_weights(input_shape)
-    # def compute_mask(self, inputs, mask):
-    #     return None
 
     def bdot(self, a, b):
         return torch.bmm(a, b)
-        # B = a.shape[0]
-        # S = a.shape[1]
-        # print('a.shape:', a.shape)
-        # print('b.shape:', b.shape)
-        # # I removed view from here
-        # # TODO: check if this is correct
-        # return torch.bmm(a, b).reshape(-1)
 
     def softmax(self, x, mask):
         y = torch.exp(x - torch.max(x, axis=1, keepdim=True))
-        # sum_y = K.batch_dot(y, torch.permute(mask, (0, 2, 1)))
         sum_y = torch.bmm(y, torch.permute(mask, (0, 2, 1)))
         return y/sum_y
 
@@ -106,52 +74,22 @@ class KeyAttention(nn.Module):
         mask_ans_inf = torch.abs(mask_ans - 1) * -10000
         mask_key_inf = torch.abs(mask_key - 1) * -10000
 
-        # print('mask_ans_inf.shape', mask_ans_inf.shape)
-        # print('mask_key_inf.shape', mask_key_inf.shape)
-        # print('mask_ans_inf', mask_ans_inf)
-        # print('mask_key_inf', mask_key_inf)
-
         mask_ans_inf_1 = torch.unsqueeze(mask_ans_inf, 1)
         mask_key_inf_1 = torch.unsqueeze(mask_key_inf, 1)
-
-        # print('After unsqueeze')
-
-        # print('mask_ans_inf_1.shape', mask_ans_inf.shape)
-        # print('mask_key_inf_1.shape', mask_key_inf.shape)
-        # print('mask_ans_inf_1', mask_ans_inf)
-        # print('mask_key_inf_1', mask_key_inf)
 
         mask_ans_2 = torch.unsqueeze(mask_ans, 2)
         mask_key_2 = torch.unsqueeze(mask_key, 2)
 
-        # print('mask_ans_2.shape', mask_ans_2.shape)
-        # print('mask_key_2.shape', mask_key_2.shape)
-        # print('mask_ans_2', mask_ans_2)
-        # print('mask_key_2', mask_key_2)
-
         ans = ans * mask_ans_2
         key = key * mask_key_2
 
-        # print('ans.shape', ans.shape)
-        # print('key.shape', key.shape)
-        # print('ans', ans)
-        # print('key', key)
-
         Z_dp = torch.bmm(key, torch.permute(ans, (0, 2, 1)))
-
-        # print('Z_dp.shape', Z_dp.shape)
-        # print('Z_dp', Z_dp)
-        # Z_dp = K.batch_dot(key, K.permute_dimensions(ans, (0, 2, 1)))
 
         norm_ans = torch.sqrt(torch.maximum(torch.sum(torch.square(ans), -1), torch.tensor(1e-7)))
         norm_key = torch.sqrt(torch.maximum(torch.sum(torch.square(key), -1), torch.tensor(1e-7)))
 
         norm_repeat_ans = torch.repeat_interleave(norm_ans, self.token_num_key, dim=0).reshape(self.batch_size, self.token_num_key, self.token_num_ans)
         norm_repeat_key = torch.repeat_interleave(norm_key, self.token_num_ans, dim=0).reshape(self.batch_size, self.token_num_ans, self.token_num_key)
-        # print('norm_ans.shape:', norm_ans.shape)
-        # print('norm_key.shape:', norm_key.shape)
-        # print('norm_repeat_key:', norm_repeat_key.shape)
-        # print('norm_repeat_ans:', norm_repeat_ans.shape)
 
         # why permute again?
         norm_repeat_key = torch.permute(norm_repeat_key, (0, 2, 1))
@@ -188,10 +126,6 @@ class KeyAttention(nn.Module):
 
         U = torch.bmm(Z_softmax_ans, ans)
         U = U * mask_key_2
-
-        # print('shape of Z_cos + mask_ans_inf_1', (Z_cos + mask_ans_inf_1).shape)
-        # print('torch.max of Z_cos + mask_ans_inf_1:', torch.max(Z_cos + mask_ans_inf_1, axis=2))
-        # print('shape', torch.max(Z_cos + mask_ans_inf_1, axis=2).shape)
 
         # torch.max returns a tuple unlike keras.backend.max
         beta_key = torch.sigmoid(torch.max(Z_cos + mask_ans_inf_1, axis=2)[0] * 5)
