@@ -38,13 +38,15 @@ For a response $r$ with $n$ words and key phrase $k$ with $m$ words, GLoVE word 
 2. Softmax is computed over the rows and columns of the matrix to obtain $\alpha_{i}^{k}$ and $\alpha_{j}^{r}$, where $\alpha_{i}^{k}$ intuitively signifies the attention that the word $i$ in the key phrase pays to every word in $a$.
 
 <div align="center">
-    <img width="600" src="https://render.githubusercontent.com/render/math?math=\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}" />
+    <img width="500" src="https://render.githubusercontent.com/render/math?math=\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}" />
 </div>
 
 3. Attentional vectors are computed based on $\alpha_{i}^{k}$ and $\alpha_{j}^{a}$ using a weighted sum for both key phrase to response and response to key phrase.
-    ```math
-        \{u = \frac{1}{m} \sum \sum \alpha_{i,j}^{k} e_{j}^{r}, \ v = \frac{1}{n} \sum \sum \alpha_{j,i}^{r} e_{i}^{k}\}
-    ```
+
+<div align="center">
+    <img width="300" src="https://render.githubusercontent.com/render/math?math=\{u = \frac{1}{m} \sum \sum \alpha_{i,j}^{k} e_{j}^{r}, \ v = \frac{1}{n} \sum \sum \alpha_{j,i}^{r} e_{i}^{k}\}" />
+</div>
+
 4. A feature vector $f_{k} = [u;v]$ is output for $k$ key elements before being concatenated into an overall word-level attention vector $f=[f_{1}, f_{2}, f_{3}, ... f_{k}]$.
 
 #### Combining Module for Multimodal Amalgamation
