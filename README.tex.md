@@ -1,5 +1,6 @@
 # Hybrid Deep Neural Networks for Industrial Text Scoring
 Sidharrth Nagappan, Hui-Ngo Goh and Amy Lim Hui Lan
+
 Faculty of Computing and Informatics, Multimedia University
 
 <i>This is the official implementation of our paper in IEA AIE 2022. The corpus of reports is confidential, but we have provided notebooks for benchmark evaluation of our scoring framework on ASAP-AES.</i>
