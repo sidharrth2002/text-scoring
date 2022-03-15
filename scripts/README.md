@@ -1,0 +1,1 @@
+To evaluate the framework using BERT in place of the Longformer, run `sh run.sh`.
