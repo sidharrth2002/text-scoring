@@ -31,34 +31,35 @@ For a response $r$ with $n$ words and key phrase $k$ with $m$ words, GLoVE word 
 
 1. The dot product of the two sequences is computed.
 
-<div align="center">
-    <img width="100" src="https://render.githubusercontent.com/render/math?math=z_{i,j} = e_{i}^{k} \cdot e_{j}^{r}" />
-</div>
+$
+z_{i,j} = e_{i}^{k} \cdot e_{j}^{r}
+$
 
 2. Softmax is computed over the rows and columns of the matrix to obtain $\alpha_{i}^{k}$ and $\alpha_{j}^{r}$, where $\alpha_{i}^{k}$ intuitively signifies the attention that the word $i$ in the key phrase pays to every word in $a$.
 
-<div align="center">
-    <img width="500" src="https://render.githubusercontent.com/render/math?math=\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}" />
-</div>
+$
+\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}
+$
 
 3. Attentional vectors are computed based on $\alpha_{i}^{k}$ and $\alpha_{j}^{a}$ using a weighted sum for both key phrase to response and response to key phrase.
 
-<div align="center">
-    <img width="300" src="https://render.githubusercontent.com/render/math?math=\{u = \frac{1}{m} \sum \sum \alpha_{i,j}^{k} e_{j}^{r}, \ v = \frac{1}{n} \sum \sum \alpha_{j,i}^{r} e_{i}^{k}\}" />
-</div>
+
+$
+\{u = \frac{1}{m} \sum \sum \alpha_{i,j}^{k} e_{j}^{r}, \ v = \frac{1}{n} \sum \sum \alpha_{j,i}^{r} e_{i}^{k}\}
+$
 
 4. A feature vector $f_{k} = [u;v]$ is output for $k$ key elements before being concatenated into an overall word-level attention vector $f=[f_{1}, f_{2}, f_{3}, ... f_{k}]$.
 
 #### Combining Module for Multimodal Amalgamation
 The outputs of blocks B and C are combined with the logits output of the neural block either via an (a) attention sum or (b) an MLP. The attention sum adds the Longformer outputs, categorical and numerical features and the word-level attention feature vector, before the Longformer outputs query the result vector. For example, if $F$ is the final feature vector, $W$ is the weight matrix, $x$ is the longformer's text features, $c$ represents categorical features, $n$ represents numerical, and $w$ represents attentional features, the total features $F$ and attention $\alpha_{i,j}$ are:
 
-```math
+$
         F=\alpha_{x,x}W_{x}x+\alpha_{x,c}W_{c}c+\alpha_{x,n}W_{n}n+\alpha_{x,w}W_{w}w
-```
+$
 
-```math
+$
         \alpha_{i,j} = \frac{exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{j}x_{j}]))}{\sum_{k\in\{x,c,n,w\}}exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{k}x_{k}]))}
-```
+$
 
 
 #### Acknowledgements
