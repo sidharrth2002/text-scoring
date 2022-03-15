@@ -30,13 +30,16 @@ Based on the work of Chen et al. and Wang et al., we compute the attentional sim
 For a response $r$ with $n$ words and key phrase $k$ with $m$ words, GLoVE word embedding sequences $\{e_{1}^{r}, e_{2}^{r}, e_{3}^{r},...,e_{n}^{r} \}$ and $\{e_{1}^{k}, e_{2}^{k}, e_{3}^{k},...,e_{m}^{k} \}$ are respectively generated.
 
 1. The dot product of the two sequences is computed.
-    ```math
-        z_{i,j} = e_{i}^{k} \cdot e_{j}^{r}
-    ```
+
+<div align="center">
+    <img width="100" src="https://render.githubusercontent.com/render/math?math=z_{i,j} = e_{i}^{k} \cdot e_{j}^{r}" />
+</div>
+
 2. Softmax is computed over the rows and columns of the matrix to obtain $\alpha_{i}^{k}$ and $\alpha_{j}^{r}$, where $\alpha_{i}^{k}$ intuitively signifies the attention that the word $i$ in the key phrase pays to every word in $a$.
-    ```math
-        \{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}
-    ```
+
+<div align="center">
+    <img width="600" src="https://render.githubusercontent.com/render/math?math=\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}" />
+</div>
 
 3. Attentional vectors are computed based on $\alpha_{i}^{k}$ and $\alpha_{j}^{a}$ using a weighted sum for both key phrase to response and response to key phrase.
     ```math
