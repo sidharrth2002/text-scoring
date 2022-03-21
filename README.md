@@ -1,4 +1,4 @@
-# Hybrid Deep Neural Networks for Industrial Text Scoring
+# Text Scoring
 Sidharrth Nagappan, Hui-Ngo Goh and Amy Lim Hui Lan
 
 Faculty of Computing and Informatics, Multimedia University
