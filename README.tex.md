@@ -61,7 +61,7 @@ $
 
 
 #### Acknowledgements
-<i>This work is sponsored by Fusionex International. We employed and built on top of Ken Gu's Pytorch implementation of multimodal transformers. Pretrained transformer weights are from Huggingface. The Pytorch implementation of word-level attention is based off Wang et al. (2019)'s Tensorflow implementation.</i>
+<i>We employed and built on top of Ken Gu's Pytorch implementation of multimodal transformers. Pretrained transformer weights are from Huggingface. The Pytorch implementation of word-level attention is based off Wang et al. (2019)'s Tensorflow implementation.</i>
 
 If you have any queries, please contact us through this <a href="mailto:sidharrth2002@gmail.com">email</a>.
 
