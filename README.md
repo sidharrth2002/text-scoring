@@ -1,12 +1,6 @@
-# Hybrid Deep Neural Networks for Industrial Text Scoring
-Sidharrth Nagappan, Hui-Ngo Goh and Amy Lim Hui Lan
+# A Generalisable Text Scoring Framework
 
-Faculty of Computing and Informatics, Multimedia University
-
-<i>This is the official implementation of our paper in IEA AIE 2022. The corpus of reports is confidential, but we have provided notebooks for benchmark evaluation of our scoring framework on ASAP-AES.</i>
-
-### Abstract
-Academic scoring is mainly explored through the pedagogical fields of Automated Essay Scoring (AES) and Short Answer Scoring (SAS), but text scoring in other domains has received limited attention. This paper focuses on industrial text scoring, namely the processing and adherence checking of long annual reports based on regulatory requirements. To lay the foundation for non-academic scoring, a pioneering corpus of annual reports from Malaysian listed companies is scraped, segmented into sections, and domain experts score relevant sections based on adherence. Subsequently, deep neural non-hierarchical attention-based LSTMs, hierarchical attention networks and longformer-based models are refined and evaluated. Since the longformer outperformed LSTM-based models, we embed it into a hybrid scoring framework that employs lexicon and named entity features, with rubric injection via word-level attention, culminating in a Kappa score of 0.956 and 0.811 in both our corpora, respectively. Though scoring is fundamentally subjective, our proposed models show significant results when navigating thin rubric boundaries and handling adversarial responses. As our work proposes a novel industrial text scoring engine, we hope to validate our framework using more official documentation based on a broader range of regulatory practices, both in Malaysia and the securities commissions of other nations.
+<i>This is the official implementation of our paper in IEA AIE 2022. We have provided notebooks for benchmark evaluation of our scoring framework on ASAP-AES.</i>
 
 <img src="updated-framework.png">
 <p align="center"><i>Our hybrid proposal consists of blocks A, B and C.</i></p>
@@ -54,7 +48,7 @@ The outputs of blocks B and C are combined with the logits output of the neural 
 
 
 #### Acknowledgements
-<i>This work is sponsored by Fusionex International. We employed and built on top of Ken Gu's Pytorch implementation of multimodal transformers. Pretrained transformer weights are from Huggingface. The Pytorch implementation of word-level attention is based off Wang et al. (2019)'s Tensorflow implementation.</i>
+<i>We employed and built on top of Ken Gu's Pytorch implementation of multimodal transformers. Pretrained transformer weights are from Huggingface. The Pytorch implementation of word-level attention is based off Wang et al. (2019)'s Tensorflow implementation.</i>
 
 If you have any queries, please contact us through this <a href="mailto:sidharrth2002@gmail.com">email</a>.
 
