@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 __version__ = '0.1.4-alpha'
-url = 'https://github.com/georgianpartners/Multimodal-Toolkit'
+url = 'https://github.com/sidharrth2002/text-scoring'
 
 install_requires = [
     'torch',
@@ -15,14 +15,14 @@ install_requires = [
 ]
 
 setup(
-    name='implementations',
+    name='industrial-text-scoring',
     packages=find_packages(),
     include_package_data=True,
     version=__version__,
     license='MIT',
-    description='Multimodal Extension Library for PyTorch HuggingFace Transformers',
-    author='Ken Gu',
-    author_email='kgu@georgianpartners.com',
+    description='Industrial Text Scoring',
+    author='Sidharrth Nagappan',
+    author_email='sidharrth2002@gmail.com',
     url=url,
     download_url='{}/archive/v_{}.tar.gz'.format(url, __version__),
     keywords=['pytorch', 'multimodal', 'transformers', 'huggingface'],   # Keywords that define your package best
