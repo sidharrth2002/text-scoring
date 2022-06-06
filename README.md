@@ -49,11 +49,11 @@ $$
 The outputs of blocks B and C are combined with the logits output of the neural block either via an (a) attention sum or (b) an MLP. The attention sum adds the Longformer outputs, categorical and numerical features and the word-level attention feature vector, before the Longformer outputs query the result vector. For example, if $F$ is the final feature vector, $W$ is the weight matrix, $x$ is the longformer's text features, $c$ represents categorical features, $n$ represents numerical, and $w$ represents attentional features, the total features $F$ and attention $\alpha_{i,j}$ are:
 
 $$
-        F=\alpha_{x,x}W_{x}x+\alpha_{x,c}W_{c}c+\alpha_{x,n}W_{n}n+\alpha_{x,w}W_{w}w
+F=\alpha_{x,x}W_{x}x+\alpha_{x,c}W_{c}c+\alpha_{x,n}W_{n}n+\alpha_{x,w}W_{w}w
 $$
 
 $$
-        \alpha_{i,j} = \frac{exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{j}x_{j}]))}{\sum_{k\in\{x,c,n,w\}}exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{k}x_{k}]))}
+\alpha_{i,j} = \frac{exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{j}x_{j}]))}{\sum_{k\in\{x,c,n,w\}}exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{k}x_{k}]))}
 $$
 
 
