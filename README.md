@@ -22,39 +22,29 @@ Block B is a module that processes the categorical presence of domain-specific l
 #### Block C (Rubric Word-level Attention)
 Based on the work of Chen et al. and Wang et al., we compute the attentional similarity between expert-defined keywords (that one can expect a high-scoring response to use) and the response. The careful selection of phrases allows the injection of scoring rubrics into the model.
 
-For a response $r$ with $n$ words and key phrase $k$ with $m$ words, GLoVE word embedding sequences $\{e_{1}^{r}, e_{2}^{r}, e_{3}^{r},...,e_{n}^{r} \}$ and $\{e_{1}^{k}, e_{2}^{k}, e_{3}^{k},...,e_{m}^{k} \}$ are respectively generated.
+For a response <img src="svgs/89f2e0d2d24bcf44db73aab8fc03252c.svg?invert_in_darkmode" align=middle width=7.87295519999999pt height=14.15524440000002pt/> with <img src="svgs/55a049b8f161ae7cfeb0197d75aff967.svg?invert_in_darkmode" align=middle width=9.86687624999999pt height=14.15524440000002pt/> words and key phrase <img src="svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/> with <img src="svgs/0e51a2dede42189d77627c4d742822c3.svg?invert_in_darkmode" align=middle width=14.433101099999991pt height=14.15524440000002pt/> words, GLoVE word embedding sequences <img src="svgs/db683cdca5d92271dbbbf1d0d957275a.svg?invert_in_darkmode" align=middle width=121.04849129999998pt height=24.65753399999998pt/> and <img src="svgs/e32a06c85ad18320cde736c7cf5257b8.svg?invert_in_darkmode" align=middle width=126.72777149999999pt height=27.91243950000002pt/> are respectively generated.
 
 1. The dot product of the two sequences is computed.
 
-$$
-z_{i,j} = e_{i}^{k} \cdot e_{j}^{r}
-$$
+<p align="center"><img src="svgs/5328a1207fef0f2b6fee9d412e1e83f4.svg?invert_in_darkmode" align=middle width=86.7693255pt height=21.07942155pt/></p>
 
-2. Softmax is computed over the rows and columns of the matrix to obtain $\alpha_{i}^{k}$ and $\alpha_{j}^{r}$, where $\alpha_{i}^{k}$ intuitively signifies the attention that the word $i$ in the key phrase pays to every word in $a$.
+2. Softmax is computed over the rows and columns of the matrix to obtain <img src="svgs/bb29a9f7a3162180ce87baa9ef88360d.svg?invert_in_darkmode" align=middle width=17.84252744999999pt height=27.91243950000002pt/> and <img src="svgs/d1454c73d1f7e48c0bf5f62ef552cd12.svg?invert_in_darkmode" align=middle width=17.03394659999999pt height=21.839370299999988pt/>, where <img src="svgs/bb29a9f7a3162180ce87baa9ef88360d.svg?invert_in_darkmode" align=middle width=17.84252744999999pt height=27.91243950000002pt/> intuitively signifies the attention that the word <img src="svgs/77a3b857d53fb44e33b53e4c8b68351a.svg?invert_in_darkmode" align=middle width=5.663225699999989pt height=21.68300969999999pt/> in the key phrase pays to every word in <img src="svgs/44bc9d542a92714cac84e01cbbb7fd61.svg?invert_in_darkmode" align=middle width=8.68915409999999pt height=14.15524440000002pt/>.
 
-$$
-\{\alpha_{i}^{k} = softmax(z_{i, 1}, ..., z_{i, n}), \ \alpha_{j}^{a} = softmax(z_{1, j}, ..., z_{m, j})\}
-$$
+<p align="center"><img src="svgs/54ac2914dfd77a9969db3c74d3abb275.svg?invert_in_darkmode" align=middle width=424.22195475pt height=21.07942155pt/></p>
 
-3. Attentional vectors are computed based on $\alpha_{i}^{k}$ and $\alpha_{j}^{a}$ using a weighted sum for both key phrase to response and response to key phrase.
+3. Attentional vectors are computed based on <img src="svgs/bb29a9f7a3162180ce87baa9ef88360d.svg?invert_in_darkmode" align=middle width=17.84252744999999pt height=27.91243950000002pt/> and <img src="svgs/ca4a4046292218c69b2df64a5b492206.svg?invert_in_darkmode" align=middle width=17.70688094999999pt height=21.839370299999988pt/> using a weighted sum for both key phrase to response and response to key phrase.
 
 
-$$
-\{u = \frac{1}{m} \sum \sum \alpha_{i,j}^{k} e_{j}^{r}, \ v = \frac{1}{n} \sum \sum \alpha_{j,i}^{r} e_{i}^{k}\}
-$$
+<p align="center"><img src="svgs/0cd98600d3bdf2df6792ec97545d7267.svg?invert_in_darkmode" align=middle width=316.5946542pt height=32.990165999999995pt/></p>
 
-4. A feature vector $f_{k} = [u;v]$ is output for $k$ key elements before being concatenated into an overall word-level attention vector $f=[f_{1}, f_{2}, f_{3}, ... f_{k}]$.
+4. A feature vector <img src="svgs/2ba1068e431d1c8c6ff698a6590a6a4b.svg?invert_in_darkmode" align=middle width=72.4600074pt height=24.65753399999998pt/> is output for <img src="svgs/63bb9849783d01d91403bc9a5fea12a2.svg?invert_in_darkmode" align=middle width=9.075367949999992pt height=22.831056599999986pt/> key elements before being concatenated into an overall word-level attention vector <img src="svgs/84ff826e04cd5f2ba4391db3aefa8f92.svg?invert_in_darkmode" align=middle width=138.88708515pt height=24.65753399999998pt/>.
 
 #### Combining Module for Multimodal Amalgamation
-The outputs of blocks B and C are combined with the logits output of the neural block either via an (a) attention sum or (b) an MLP. The attention sum adds the Longformer outputs, categorical and numerical features and the word-level attention feature vector, before the Longformer outputs query the result vector. For example, if $F$ is the final feature vector, $W$ is the weight matrix, $x$ is the longformer's text features, $c$ represents categorical features, $n$ represents numerical, and $w$ represents attentional features, the total features $F$ and attention $\alpha_{i,j}$ are:
+The outputs of blocks B and C are combined with the logits output of the neural block either via an (a) attention sum or (b) an MLP. The attention sum adds the Longformer outputs, categorical and numerical features and the word-level attention feature vector, before the Longformer outputs query the result vector. For example, if <img src="svgs/b8bc815b5e9d5177af01fd4d3d3c2f10.svg?invert_in_darkmode" align=middle width=12.85392569999999pt height=22.465723500000017pt/> is the final feature vector, <img src="svgs/84c95f91a742c9ceb460a83f9b5090bf.svg?invert_in_darkmode" align=middle width=17.80826024999999pt height=22.465723500000017pt/> is the weight matrix, <img src="svgs/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode" align=middle width=9.39498779999999pt height=14.15524440000002pt/> is the longformer's text features, <img src="svgs/3e18a4a28fdee1744e5e3f79d13b9ff6.svg?invert_in_darkmode" align=middle width=7.11380504999999pt height=14.15524440000002pt/> represents categorical features, <img src="svgs/55a049b8f161ae7cfeb0197d75aff967.svg?invert_in_darkmode" align=middle width=9.86687624999999pt height=14.15524440000002pt/> represents numerical, and <img src="svgs/31fae8b8b78ebe01cbfbe2fe53832624.svg?invert_in_darkmode" align=middle width=12.210846449999991pt height=14.15524440000002pt/> represents attentional features, the total features <img src="svgs/b8bc815b5e9d5177af01fd4d3d3c2f10.svg?invert_in_darkmode" align=middle width=12.85392569999999pt height=22.465723500000017pt/> and attention <img src="svgs/c7b563f054f93e8efdaffab95f932e14.svg?invert_in_darkmode" align=middle width=25.175188499999987pt height=14.15524440000002pt/> are:
 
-$$
-        F=\alpha_{x,x}W_{x}x+\alpha_{x,c}W_{c}c+\alpha_{x,n}W_{n}n+\alpha_{x,w}W_{w}w
-$$
+<p align="center"><img src="svgs/2d9a4cef7cb09e21e1a8dd64ee466ede.svg?invert_in_darkmode" align=middle width=352.35256484999996pt height=15.936036599999998pt/></p>
 
-$$
-        \alpha_{i,j} = \frac{exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{j}x_{j}]))}{\sum_{k\in\{x,c,n,w\}}exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{k}x_{k}]))}
-$$
+<p align="center"><img src="svgs/69be82b3eea55ce5c9d77672b3361b5c.svg?invert_in_darkmode" align=middle width=398.26479165pt height=44.03322825pt/></p>
 
 
 #### Acknowledgements
