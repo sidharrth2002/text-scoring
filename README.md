@@ -22,7 +22,19 @@ Block B is a module that processes the categorical presence of domain-specific l
 #### Block C (Rubric Word-level Attention)
 Based on the work of Chen et al. and Wang et al., we compute the attentional similarity between expert-defined keywords (that one can expect a high-scoring response to use) and the response. The careful selection of phrases allows the injection of scoring rubrics into the model.
 
-For a response $r$ with $n$ words and key phrase $k$ with $m$ words, GLoVE word embedding sequences $\{e_{1}^{r}, e_{2}^{r}, e_{3}^{r},...,e_{n}^{r} \}$ and $\{e_{1}^{k}, e_{2}^{k}, e_{3}^{k},...,e_{m}^{k} \}$ are respectively generated.
+For a response r with n words and key phrase k with m words, GLoVE word embedding sequences:
+
+$$
+\{e_{1}^{r}, e_{2}^{r}, e_{3}^{r},...,e_{n}^{r} \}
+$$ 
+
+and 
+
+$$
+\{e_{1}^{k}, e_{2}^{k}, e_{3}^{k},...,e_{m}^{k} \}
+$$ 
+
+are respectively generated.
 
 1. The dot product of the two sequences is computed.
 
