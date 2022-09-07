@@ -2,6 +2,8 @@
 
 <i>This is the official implementation of our paper in IEA AIE 2022. We have provided notebooks for benchmark evaluation of our scoring framework on ASAP-AES.</i>
 
+Read the full paper [here](https://link.springer.com/chapter/10.1007/978-3-031-08530-7_58).
+
 <img src="updated-framework.png">
 <p align="center"><i>Our hybrid proposal consists of blocks A, B and C.</i></p>
 
