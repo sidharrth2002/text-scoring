@@ -70,11 +70,27 @@ $$
 \alpha_{i,j} = \frac{exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{j}x_{j}]))}{\sum_{k\in\{x,c,n,w\}}exp(LeakyReLU(a^{T}[W_{i}x_{i}||W_{k}x_{k}]))}
 $$
 
-
 #### Acknowledgements
 <i>We employed and built on top of Ken Gu's Pytorch implementation of multimodal transformers. Pretrained transformer weights are from Huggingface. The Pytorch implementation of word-level attention is based off Wang et al. (2019)'s Tensorflow implementation.</i>
 
 If you have any queries, please contact us through this <a href="mailto:sidharrth2002@gmail.com">email</a>.
+
+#### Citation
+
+If you use our code, please cite this paper:
+
+```bib
+@inproceedings{10.1007/978-3-031-08530-7_58,
+	title        = {Hybrid Deep Neural Networks for Industrial Text Scoring},
+	author       = {Nagappan, Sidharrth and Goh, Hui-Ngo and Lim, Amy Hui-Lan},
+	year         = 2022,
+	booktitle    = {Advances and Trends in Artificial Intelligence. Theory and Practices in Artificial Intelligence},
+	publisher    = {Springer International Publishing},
+	address      = {Cham},
+	pages        = {695--706},
+	isbn         = {978-3-031-08530-7}
+}
+```
 
 #### References
 
